@@ -1,0 +1,52 @@
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import Login from "./pages/Auth/Login";
+import SignUp from "./pages/Auth/SignUp";
+import Home from "./pages/Dashboard/Home";
+import Income from "./pages/Dashboard/Income";
+import Expense from "./pages/Dashboard/Expense";
+import UserProvider from "./context/UserContext";
+import { Toaster } from "react-hot-toast";
+const App = () => {
+  return (
+    <UserProvider>
+      <div>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Root />}></Route>
+            <Route path="/login" element={<Login />}></Route>
+            <Route path="/signUp" element={<SignUp />}></Route>
+            <Route path="/dashboard" element={<Home />}></Route>
+            <Route path="/income" element={<Income />}></Route>
+            <Route path="/expense" element={<Expense />}></Route>
+          </Routes>
+        </Router>
+      </div>
+      <Toaster
+        toastOption={{
+          className: "",
+          style: {
+            fontSize: "13px",
+          },
+        }}
+      />
+    </UserProvider>
+  );
+};
+
+export default App;
+
+const Root = () => {
+  // Check if token exist in localstorage
+  const isAuthenticated = !!localStorage.getItem("token");
+  return isAuthenticated ? (
+    <Navigate to="/dashboard" />
+  ) : (
+    <Navigate to="/login" />
+  );
+};
