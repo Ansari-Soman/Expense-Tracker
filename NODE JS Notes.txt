@@ -1,7 +1,0 @@
-/-**********_-MIDDLEWARE-_**********-/
-app.use(express.json()); //for Json data from html
-app.use(express.urlencoded()); // for encoded data ex: "username=Soman&age=21"
-app.use("/api/v1/auth", authRoutes); //Gonna redirect to auth where 
-
-/-**********_-MONGOOSE-_**********-/
-

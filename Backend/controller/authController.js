@@ -72,15 +72,12 @@ exports.loginUser = async (req, res) => {
 
 // getUserInfo
 exports.getUserInfo = async (req, res) => {
-  console.log("In the userinfo ", req);
   try {
     const user = await User.findById(req.user.id).select("-password");
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
-
-    console.log("In the getInfo user =", user);
     res.status(200).json(user);
   } catch (err) {
     res
