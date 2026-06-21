@@ -7,11 +7,13 @@ import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPath";
 import { useContext } from "react";
 import { UserContext } from "../../context/UserContext";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const { updateUser } = useContext(UserContext);
   const navigate = useNavigate();
 
@@ -28,6 +30,7 @@ const Login = () => {
     }
 
     setError("");
+    setLoading(true);
 
     // Login API call
     try {
@@ -39,23 +42,42 @@ const Login = () => {
       if (token) {
         localStorage.setItem("token", token);
         updateUser(user);
+        toast.success("Welcome back!");
         navigate("/dashboard");
       }
     } catch (err) {
       console.log("Login Error == ", err);
+      if (
+        err.response &&
+        err.response.status === 403 &&
+        err.response.data?.isVerified === false
+      ) {
+        toast.error("Email not verified. Redirecting to verification...");
+        navigate("/verify-otp", {
+          state: {
+            email: err.response.data.email,
+            otp: err.response.data.otp,
+          },
+        });
+        return;
+      }
+
       if (err.response && err.response.data.message) {
         setError(err.response.data.message);
       } else {
         setError("Something went wrong. Please try again.");
       }
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
     <AuthLayout>
-      <div className="lg:w-[70%]  h:3/4  md:h-full flex flex-col justify-center">
-        <h3 className="text-2xl text-black font-semibold">Welcome Back</h3>
-        <p className="text-md  text-slate-700 mt-[5px] mb-6">
-          Please enter your details to log in
+      <div className="w-full max-w-[420px] flex flex-col justify-center">
+        <h3 className="text-3xl text-slate-900 dark:text-white font-bold tracking-tight">Welcome Back</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 mb-7">
+          Please enter your details to log in to your account.
         </p>
 
         <form onSubmit={handleLogin}>
@@ -75,16 +97,25 @@ const Login = () => {
             type="password"
           />
 
-          {error && <p className="text-red-500 text-xs pb-2.5">{error}</p>}
+          <div className="flex justify-end -mt-2 mb-5">
+            <Link
+              to="/forgot-password"
+              className="text-xs font-semibold text-primary hover:text-purple-600 transition-colors"
+            >
+              Forgot Password?
+            </Link>
+          </div>
 
-          <button type="submit" className="btn-primary">
-            LOGIN
+          {error && <p className="text-red-550 dark:text-red-400 text-xs pb-3 font-medium">{error}</p>}
+
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? "LOGGING IN..." : "LOGIN"}
           </button>
 
-          <p className="text-[13px] text-slate-800 mt-3">
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-4 text-center">
             Don't have an account?{" "}
-            <Link to="/signUp" className="font-medium text-primary underline">
-              SignUp
+            <Link to="/signUp" className="font-semibold text-primary hover:underline">
+              Sign Up
             </Link>
           </p>
         </form>

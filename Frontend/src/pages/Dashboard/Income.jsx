@@ -1,25 +1,40 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import IncomeOverview from "../../components/Income/IncomeOverview";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPath";
+import Drawer from "../../components/Drawer";
 import Modal from "../../components/Modal";
-import AddIncomeForm from "../../components/Income/AddIncomeForm";
+import AddTransactionDrawerContent from "../../components/AddTransactionDrawerContent";
 import toast from "react-hot-toast";
 import IncomeList from "../../components/Income/IncomeList";
 import DeleteAlert from "../../components/DeleteAlert";
 import { useUserAuth } from "../../hooks/userAuth";
+import { useLocation } from "react-router-dom";
+import { UserContext } from "../../context/UserContext";
+import { MOCK_INCOMES } from "../../utils/mockData";
+import ConsoleLoader from "../../components/ConsoleLoader";
 
 const Income = () => {
   useUserAuth();
+  const location = useLocation();
+  const { demoDataEnabled } = useContext(UserContext);
 
-  const [openAddIncomeModal, setOpenAddIncomeModal] = useState(false);
+  const [openAddIncomeDrawer, setOpenAddIncomeDrawer] = useState(false);
   const [incomeData, setIncomeData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openDeleteAlert, setOpenDeleteAlert] = useState({
     show: false,
     data: null,
   });
+
+  useEffect(() => {
+    if (location.state?.openModal) {
+      setOpenAddIncomeDrawer(true);
+      // Clear location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   // Get All Income Details
   const fetchIncomeDetails = async () => {
@@ -39,35 +54,48 @@ const Income = () => {
     }
   };
 
-  // Handle Add Income
+  // Handle Add Income (supports both single object and bulk array)
   const handleAddIncome = async (income) => {
-    const { source, amount, icon, date } = income;
-
-    // Validation check
-    if (!source.trim()) {
-      toast.error("Source is required");
+    // 1. Bulk Insert
+    if (Array.isArray(income)) {
+      try {
+        setLoading(true);
+        await Promise.all(
+          income.map((item) =>
+            axiosInstance.post(API_PATHS.INCOME.ADD_INCOME, {
+              amount: item.amount,
+              icon: item.icon,
+              source: item.source,
+              date: item.date,
+              description: item.description,
+              paymentMethod: item.paymentMethod,
+            })
+          )
+        );
+        setOpenAddIncomeDrawer(false);
+        toast.success("Bulk income logs added successfully");
+        fetchIncomeDetails();
+      } catch (err) {
+        console.error("Bulk add income error:", err);
+        toast.error("Failed to add bulk income. Please try again.");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
-    if (!amount || isNaN(amount) || Number(amount) <= 0) {
-      toast.error("Amount should be a valid number greater than 0.");
-      return;
-    }
-
-    if (!date) {
-      toast.error("Date is required");
-      return;
-    }
-
-    // Add Income Api
+    // 2. Single Insert
+    const { source, amount, icon, date, description, paymentMethod } = income;
     try {
       await axiosInstance.post(API_PATHS.INCOME.ADD_INCOME, {
         amount,
         icon,
         source,
         date,
+        description,
+        paymentMethod,
       });
-      setOpenAddIncomeModal(false);
+      setOpenAddIncomeDrawer(false);
       toast.success("Income added successfully");
       fetchIncomeDetails();
     } catch (err) {
@@ -75,6 +103,7 @@ const Income = () => {
         "Error adding income: ",
         err.response?.data?.message || err.message
       );
+      toast.error(err.response?.data?.message || "Failed to add income");
     }
   };
 
@@ -118,38 +147,58 @@ const Income = () => {
 
   useEffect(() => {
     fetchIncomeDetails();
-
-    return () => {};
   }, []);
+
+  // Use mock data if sandbox mode is active or database is empty
+  const activeIncomeData = (demoDataEnabled || (!loading && incomeData.length === 0)) ? MOCK_INCOMES : incomeData;
 
   return (
     <DashboardLayout activeMenu="Income">
       <div className="my-5 mx-auto">
-        <div className="grid grid-cols-1 gap-6">
-          <div>
-            <IncomeOverview
-              transactions={incomeData}
-              onAddIncome={() => setOpenAddIncomeModal(true)}
-            />
-          </div>
+        {loading ? (
+          <ConsoleLoader message="RETRIEVING_DATA_STREAM" />
+        ) : (
+          <>
+            {demoDataEnabled && (
+              <div className="mb-4 p-2 bg-[var(--color-primary-light)] text-[var(--color-primary)] font-mono text-[10px] rounded border border-[var(--color-primary)]/20 flex items-center justify-between">
+                <span>$ sandbox_status --mode sandbox_simulation_active</span>
+                <span>[SIMULATING DATA]</span>
+              </div>
+            )}
 
-          <IncomeList
-            transactions={incomeData}
-            onDelete={(id) => {
-              setOpenDeleteAlert({ show: true, data: id });
-            }}
-            onDownload={handleDownloadIncomeDetails}
-          />
-        </div>
+            <div className="grid grid-cols-1 gap-6">
+              <div>
+                <IncomeOverview
+                  transactions={activeIncomeData}
+                  onAddIncome={() => setOpenAddIncomeDrawer(true)}
+                />
+              </div>
 
-        <Modal
-          isOpen={openAddIncomeModal}
-          onClose={() => setOpenAddIncomeModal(false)}
-          title="Add Income"
+              <IncomeList
+                transactions={activeIncomeData}
+                onDelete={(id) => {
+                  setOpenDeleteAlert({ show: true, data: id });
+                }}
+                onDownload={handleDownloadIncomeDetails}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Sliding side drawer for additions */}
+        <Drawer
+          isOpen={openAddIncomeDrawer}
+          onClose={() => setOpenAddIncomeDrawer(false)}
+          title="Add Income Records"
         >
-          <AddIncomeForm onAddIncome={handleAddIncome} />
-        </Modal>
+          <AddTransactionDrawerContent
+            type="income"
+            onSave={handleAddIncome}
+            onClose={() => setOpenAddIncomeDrawer(false)}
+          />
+        </Drawer>
 
+        {/* Center alert popup is kept for destructive deletes */}
         <Modal
           isOpen={openDeleteAlert.show}
           onClose={() => setOpenDeleteAlert({ show: false, data: null })}
@@ -158,6 +207,7 @@ const Income = () => {
           <DeleteAlert
             content="Are you sure you want to delete this income details?"
             onDelete={() => deleteIncome(openDeleteAlert.data)}
+            onClose={() => setOpenDeleteAlert({ show: false, data: null })}
           />
         </Modal>
       </div>

@@ -1,32 +1,52 @@
-import login from "../../assets/images/login.jpg";
+import AuthIllustration from "../Auth/AuthIllustration";
+import ThemeToggle from "../ThemeToggle";
 import { LuTrendingUpDown } from "react-icons/lu";
+
 const AuthLayout = ({ children }) => {
   return (
-    <div className="flex">
-      <div className="w-screen h-screen md:w-[60vw] px-12 pt-8 pb-12">
-        <h2 className="text-lg font-medium text-black">Expense Tracker</h2>
-        {children}
+    <div className="flex min-h-screen bg-[var(--bg-app)] text-[var(--text-main)] transition-colors duration-300 relative">
+      {/* Floating Theme Toggle */}
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
       </div>
 
-      <div className="hidden md:block w-[40vw] h-screen bg-violet-50  bg-auth-bg-img bg-cover bg-no-repeat bg-center overflow-hidden p-8 relative">
-        <div className="w-48 h-48 rounded-[40px] bg-purple-600 -top-7 -left-5 absolute"></div>
-        <div className="w-48 h-56 rounded-[40px] border-[20px] border-fuchsia-600 absolute top-[30%] -right-10 "></div>
-        <div className="w-48 h-48 rounded-[40px] bg-violet-500 absolute -bottom-7 -left-5"></div>
-
-        <div className="grid grid-cols-1 z-20">
-          <StatsInfoCard
-            icon={<LuTrendingUpDown />}
-            label="Track Your Income & Expenses"
-            value="430,000"
-            color="bg-primary"
-          ></StatsInfoCard>
+      {/* Left Form Panel */}
+      <div className="w-full md:w-[55vw] lg:w-[60vw] min-h-screen flex flex-col justify-between p-8 md:p-12 lg:p-16 relative">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-md bg-[var(--color-primary)] flex items-center justify-center text-white font-mono font-bold text-sm">
+            $
+          </div>
+          <h2 className="text-lg font-bold tracking-tight text-[var(--text-main)] font-mono">
+            EXPENSE_TRACKER.git
+          </h2>
         </div>
 
-        <img
-          src={login}
-          alt="login image"
-          className="w-64 lg:w-[90%] absolute bottom-10 shadow-lg shadow-blue-400/15"
-        />
+        <div className="my-auto py-10 flex justify-center">
+          {children}
+        </div>
+
+        <div className="text-xs text-[var(--text-muted)] font-mono">
+          $ cat copyright.txt
+          <p>© {new Date().getFullYear()} Expense Tracker. All assets vector-only.</p>
+        </div>
+      </div>
+
+      {/* Right Visual Panel */}
+      <div className="hidden md:flex md:w-[45vw] lg:w-[40vw] h-screen bg-[var(--bg-app)] border-l border-[var(--border-color)] sticky top-0 overflow-hidden items-center justify-center p-8">
+        {/* Background grid representation */}
+        <div className="absolute inset-0 bg-[radial-gradient(var(--border-color)_1px,transparent_1px)] [background-size:16px_16px] opacity-40"></div>
+
+        <div className="w-full max-w-md z-10 flex flex-col items-center">
+          <div className="w-full mb-6 max-w-[340px]">
+            <StatsInfoCard
+              icon={<LuTrendingUpDown />}
+              label="Pipeline Analysis"
+              value="Deploy Status: OK"
+              color="bg-[var(--color-primary-light)] text-[var(--color-primary)]"
+            />
+          </div>
+          <AuthIllustration />
+        </div>
       </div>
     </div>
   );
@@ -36,16 +56,16 @@ export default AuthLayout;
 
 const StatsInfoCard = ({ icon, label, value, color }) => {
   return (
-    <div className="flex gap-6 bg-white p-4 rounded-xl shadow-md shadow-purple-400/10 border border-gray-200/50 z-10">
+    <div className="flex items-center gap-4 bg-[var(--bg-card)] p-4 rounded-md border border-[var(--border-color)] shadow-sm">
       <div
-        className={`w-12 h-12 flex items-center justify-center text-[26px] text-white ${color} rounded-full drop-shadow-xl`}
+        className={`w-10 h-10 flex items-center justify-center text-lg ${color} rounded-md border border-[var(--border-color)]`}
       >
         {icon}
       </div>
 
       <div>
-        <h6 className="text-2xl text-gray-500 mb-1">{label}</h6>
-        <span className="text-[20px] ">${value}</span>
+        <h6 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5">{label}</h6>
+        <span className="text-sm font-bold text-[var(--text-main)] font-mono">{value}</span>
       </div>
     </div>
   );

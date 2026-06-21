@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   BarChart,
   Bar,
@@ -9,8 +9,11 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import { ThemeContext } from "../../context/ThemeContext";
 
 const CustomBarChart = ({ data = [] }) => {
+  const { isDark } = useContext(ThemeContext);
+
   // Decide which field to use for X-axis dynamically
   const detectXKey = () => {
     if (data.length === 0) return "category";
@@ -24,7 +27,7 @@ const CustomBarChart = ({ data = [] }) => {
   const xKey = detectXKey();
 
   // Alternate bar colors
-  const getBarColor = (index) => (index % 2 === 0 ? "#875cf5" : "#cfbefb");
+  const getBarColor = (index) => (index % 2 === 0 ? "var(--color-primary)" : "var(--text-muted)");
 
   // Custom tooltip design
   const CustomTooltip = ({ active, payload }) => {
@@ -33,12 +36,12 @@ const CustomBarChart = ({ data = [] }) => {
       const label = item.source || item.category || item.month || "Unknown";
 
       return (
-        <div className="bg-white shadow-md rounded-lg p-2 border border-gray-200">
-          <p className="text-xs font-semibold text-purple-800 mb-1">{label}</p>
-          <p className="text-sm text-gray-600">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-2 shadow-neon font-mono">
+          <p className="text-xs font-semibold text-[var(--color-primary)] mb-1">{label}</p>
+          <p className="text-xs text-[var(--text-main)]">
             Amount:{" "}
-            <span className="text-sm font-medium text-gray-900">
-              {item.amount}
+            <span className="font-bold text-[var(--text-main)]">
+              ${item.amount}
             </span>
           </p>
         </div>
@@ -48,29 +51,29 @@ const CustomBarChart = ({ data = [] }) => {
   };
 
   return (
-    <div className="bg-white mt-6 p-4 rounded-xl shadow-sm">
+    <div className="bg-transparent mt-6 p-0 border-none transition-colors duration-300">
       <ResponsiveContainer width="100%" height={300}>
         <BarChart
           data={data}
-          barSize={40}
-          margin={{ top: 10, right: 30, left: 0, bottom: 20 }}
+          barSize={32}
+          margin={{ top: 10, right: 10, left: -20, bottom: 10 }}
         >
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid strokeDasharray="2 2" stroke="var(--border-color)" opacity={0.4} vertical={false} />
           <XAxis
             dataKey={xKey}
-            tick={{ fontSize: 12, fill: "#555" }}
-            stroke="none"
+            tick={{ fontSize: 10, fill: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+            stroke="var(--border-color)"
           />
           <YAxis
-            tick={{ fontSize: 12, fill: "#555" }}
-            stroke="none"
-            axisLine={false}
+            tick={{ fontSize: 10, fill: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+            stroke="var(--border-color)"
+            axisLine={true}
           />
           <Tooltip
             content={<CustomTooltip />}
-            cursor={{ fill: "transparent" }} // removes gray hover overlay
+            cursor={{ fill: "var(--color-primary-light)" }}
           />
-          <Bar dataKey="amount" radius={[10, 10, 0, 0]} animationDuration={800}>
+          <Bar dataKey="amount" radius={0} animationDuration={800}>
             {data.map((entry, index) => (
               <Cell key={index} fill={getBarColor(index)} />
             ))}

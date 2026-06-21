@@ -10,7 +10,9 @@ const ExpenseSchema = new mongoose.Schema(
     icon: { type: String },
     amount: { type: Number, required: true },
     category: { type: String, required: true },
-    date: { type: Date, default: Date.now() },
+    date: { type: Date, default: Date.now },
+    description: { type: String },
+    paymentMethod: { type: String },
   },
   { timestamps: true }
 );

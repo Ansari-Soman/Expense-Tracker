@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { LuTarget } from "react-icons/lu";
 import Input from "../Inputs/Input";
-import EmojiPickerPopup from "../EmojiPickerPopup";
+import IconPicker from "../Inputs/IconPicker";
 const AddIncomeForm = ({ onAddIncome }) => {
   const [income, setIncome] = useState({
     source: "",
@@ -14,8 +14,8 @@ const AddIncomeForm = ({ onAddIncome }) => {
 
   return (
     <div>
-      <EmojiPickerPopup
-        icon={income.icon}
+      <IconPicker
+        value={income.icon}
         onSelect={(selectedIcon) => handleChange("icon", selectedIcon)}
       />
       <Input

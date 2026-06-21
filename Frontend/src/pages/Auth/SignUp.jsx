@@ -58,11 +58,13 @@ const SignUp = () => {
         password,
         profileImageUrl,
       });
-      const { token, user } = response.data;
-      if (token) {
-        localStorage.setItem("token", token);
-        updateUser(user);
-        navigate("/dashboard");
+      if (response.data?.email) {
+        navigate("/verify-otp", {
+          state: {
+            email: response.data.email,
+            otp: response.data.otp,
+          },
+        });
       }
     } catch (err) {
       console.log("SignUp Error ==", err);
@@ -75,19 +77,19 @@ const SignUp = () => {
   };
   return (
     <AuthLayout>
-      <div className="lg:w-full h-auto md:h-full mt-10 md:mt-0 flex flex-col justify-center">
-        <h3 className="text-xl font-semibold text-black">Create an Account</h3>
-        <p className="text-xs text-slate-700 mt-[5px] mb-6 ">
+      <div className="w-full max-w-[460px] flex flex-col justify-center mt-6 md:mt-0">
+        <h3 className="text-3xl text-slate-900 dark:text-white font-bold tracking-tight">Create an Account</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 mb-6">
           Join us today by entering your details below.
         </p>
-        <form action="" onSubmit={handleSignUp}>
+        <form onSubmit={handleSignUp}>
           <ProfilePhotoSelector image={profilePic} setImage={setProfilePic} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               value={fullName}
               onChange={({ target }) => setFullName(target.value)}
               label="Full Name"
-              placeholder="John"
+              placeholder="John Doe"
               type="text"
             />
 
@@ -110,15 +112,15 @@ const SignUp = () => {
             </div>
           </div>
 
-          {error && <p className="text-red-500 text-xs pb-2.5">{error}</p>}
+          {error && <p className="text-red-500 dark:text-red-400 text-xs pb-3 font-medium">{error}</p>}
 
-          <button type="submit" className="btn-primary">
+          <button type="submit" className="btn-primary mt-2">
             SIGN UP
           </button>
 
-          <p className="text-[13px] text-slate-800 mt-3">
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-4 text-center">
             Already have an account?{" "}
-            <Link to="/login" className="font-medium text-primary underline">
+            <Link to="/login" className="font-semibold text-primary hover:underline">
               Login
             </Link>
           </p>

@@ -10,7 +10,9 @@ const IncomeSchema = new mongoose.Schema(
     icon: { type: String },
     source: { type: String, required: true }, //Ex: Salary, Freelnace etc
     amount: { type: Number, required: true},
-    date: { type: Date, default: Date.now() },
+    date: { type: Date, default: Date.now },
+    description: { type: String },
+    paymentMethod: { type: String },
   },
   { timestamps: true }
 );

@@ -34,6 +34,7 @@ axiosInstance.interceptors.response.use(
     // Handle common errors globally
     if (error.response) {
       if (error.response.status === 401) {
+        localStorage.removeItem("token");
         // Redirect to login page
         window.location.href = "/login";
       } else if (error.response.status === 500) {

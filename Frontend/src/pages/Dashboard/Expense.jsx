@@ -1,24 +1,40 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useUserAuth } from "../../hooks/userAuth";
 import { API_PATHS } from "../../utils/apiPath";
 import toast from "react-hot-toast";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import axiosInstance from "../../utils/axiosInstance";
 import ExpenseOverview from "../../components/Expense/onExpenseIncome";
+import Drawer from "../../components/Drawer";
 import Modal from "../../components/Modal";
-import AddExpenseForm from "../../components/Expense/AddExpenseForm";
+import AddTransactionDrawerContent from "../../components/AddTransactionDrawerContent";
 import ExpenseList from "../../components/Expense/ExpenseList";
 import DeleteAlert from "../../components/DeleteAlert";
+import { useLocation } from "react-router-dom";
+import { UserContext } from "../../context/UserContext";
+import { MOCK_EXPENSES } from "../../utils/mockData";
+import ConsoleLoader from "../../components/ConsoleLoader";
+
 const Expense = () => {
   useUserAuth();
+  const location = useLocation();
+  const { demoDataEnabled } = useContext(UserContext);
 
-  const [openAddExpenseModal, setOpenAddExpenseModal] = useState(false);
+  const [openAddExpenseDrawer, setOpenAddExpenseDrawer] = useState(false);
   const [expenseData, setExpenseData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [openDeleteAlert, setOpenDeleteAlert] = useState({
     show: false,
     data: null,
   });
+
+  useEffect(() => {
+    if (location.state?.openModal) {
+      setOpenAddExpenseDrawer(true);
+      // Clear location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   // Get All Expense Details
   const fetchExpenseDetails = async () => {
@@ -40,35 +56,48 @@ const Expense = () => {
     }
   };
 
-  // Handle Add Expense
+  // Handle Add Expense (supports both single object and bulk array)
   const handleAddExpense = async (expense) => {
-    const { category, amount, icon, date } = expense;
-
-    // Validation check
-    if (!category.trim()) {
-      toast.error("Category is required");
+    // 1. Bulk Insert
+    if (Array.isArray(expense)) {
+      try {
+        setLoading(true);
+        await Promise.all(
+          expense.map((item) =>
+            axiosInstance.post(API_PATHS.EXPENSE.ADD_EXPENSE, {
+              amount: item.amount,
+              icon: item.icon,
+              category: item.category,
+              date: item.date,
+              description: item.description,
+              paymentMethod: item.paymentMethod,
+            })
+          )
+        );
+        setOpenAddExpenseDrawer(false);
+        toast.success("Bulk expense logs added successfully");
+        fetchExpenseDetails();
+      } catch (err) {
+        console.error("Bulk add expense error:", err);
+        toast.error("Failed to add bulk expenses. Please try again.");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
-    if (!amount || isNaN(amount) || Number(amount) <= 0) {
-      toast.error("Amount should be a valid number greater than 0.");
-      return;
-    }
-
-    if (!date) {
-      toast.error("Date is required");
-      return;
-    }
-
-    // Add Expense Api
+    // 2. Single Insert
+    const { category, amount, icon, date, description, paymentMethod } = expense;
     try {
       await axiosInstance.post(API_PATHS.EXPENSE.ADD_EXPENSE, {
         amount,
         icon,
         category,
         date,
+        description,
+        paymentMethod,
       });
-      setOpenAddExpenseModal(false);
+      setOpenAddExpenseDrawer(false);
       toast.success("Expense added successfully");
       fetchExpenseDetails();
     } catch (err) {
@@ -76,6 +105,7 @@ const Expense = () => {
         "Error adding expense: ",
         err.response?.data?.message || err.message
       );
+      toast.error(err.response?.data?.message || "Failed to add expense");
     }
   };
 
@@ -121,42 +151,65 @@ const Expense = () => {
     fetchExpenseDetails();
   }, []);
 
+  // Use mock data if sandbox mode is active or database is empty
+  const activeExpenseData = (demoDataEnabled || (!loading && expenseData.length === 0)) ? MOCK_EXPENSES : expenseData;
+
   return (
     <DashboardLayout activeMenu="Expense">
       <div className="my-5 mx-auto">
-        <div className="grid grid-cols-1 gap-6">
-          <div className="">
-            <ExpenseOverview
-              transactions={expenseData}
-              onExpenseIncome={() => setOpenAddExpenseModal(true)}
-            />
-          </div>
+        {loading ? (
+          <ConsoleLoader message="RETRIEVING_DATA_STREAM" />
+        ) : (
+          <>
+            {demoDataEnabled && (
+              <div className="mb-4 p-2 bg-[var(--color-primary-light)] text-[var(--color-primary)] font-mono text-[10px] rounded border border-[var(--color-primary)]/20 flex items-center justify-between">
+                <span>$ sandbox_status --mode sandbox_simulation_active</span>
+                <span>[SIMULATING DATA]</span>
+              </div>
+            )}
 
-          <ExpenseList
-            transactions={expenseData}
-            onDelete={(id) => {
-              setOpenDeleteAlert({ show: true, data: id });
-            }}
-            onDownload={handleDownloadExpenseDetails}
-          />
-        </div>
+            <div className="grid grid-cols-1 gap-6">
+              <div className="">
+                <ExpenseOverview
+                  transactions={activeExpenseData}
+                  onExpenseIncome={() => setOpenAddExpenseDrawer(true)}
+                />
+              </div>
 
-        <Modal
-          isOpen={openAddExpenseModal}
-          onClose={() => setOpenAddExpenseModal(false)}
-          title="Add Expense"
+              <ExpenseList
+                transactions={activeExpenseData}
+                onDelete={(id) => {
+                  setOpenDeleteAlert({ show: true, data: id });
+                }}
+                onDownload={handleDownloadExpenseDetails}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Sliding side drawer for additions */}
+        <Drawer
+          isOpen={openAddExpenseDrawer}
+          onClose={() => setOpenAddExpenseDrawer(false)}
+          title="Add Expense Records"
         >
-          <AddExpenseForm onAddExpense={handleAddExpense} />
-        </Modal>
+          <AddTransactionDrawerContent
+            type="expense"
+            onSave={handleAddExpense}
+            onClose={() => setOpenAddExpenseDrawer(false)}
+          />
+        </Drawer>
 
+        {/* Center alert popup is kept for destructive deletes */}
         <Modal
           isOpen={openDeleteAlert.show}
           onClose={() => setOpenDeleteAlert({ show: false, data: null })}
-          title="Delete Expanse"
+          title="Delete Expense"
         >
           <DeleteAlert
             content="Are you sure you want to delete this expense details?"
             onDelete={() => deleteExpense(openDeleteAlert.data)}
+            onClose={() => setOpenDeleteAlert({ show: false, data: null })}
           />
         </Modal>
       </div>

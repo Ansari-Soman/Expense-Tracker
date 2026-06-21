@@ -7,6 +7,11 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     profileImageUrl: { type: String, default: null },
+    isVerified: { type: Boolean, default: false },
+    otp: { type: String },
+    otpExpires: { type: Date },
+    resetOtp: { type: String },
+    resetOtpExpires: { type: Date },
   },
   { timestamps: true }
 );
@@ -18,8 +23,8 @@ UserSchema.pre("save", async function (next) {
 });
 
 // Compare password
-UserSchema.methods.comparePassword = async function (cadidatePassword) {
-  return await bcrypt.compare(cadidatePassword, this.password);
+UserSchema.methods.comparePassword = async function (candidatePassword) {
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
 module.exports = mongoose.model("User", UserSchema);
